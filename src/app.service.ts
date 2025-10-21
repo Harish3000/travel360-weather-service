@@ -1,10 +1,6 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { seedWeather } from './seeder';
 import { Forecast } from './entity/forecast.entity';
@@ -18,8 +14,7 @@ export class AppService implements OnModuleInit {
     private readonly forecastRepository: Repository<Forecast>,
     private readonly configService: ConfigService,
   ) {
-    this.currentDelayMs =
-      this.configService.get<number>('WEATHER_DELAY_MS') || 0;
+    this.currentDelayMs = this.configService.get<number>('WEATHER_DELAY_MS') || 0;
   }
 
   async onModuleInit() {
@@ -28,10 +23,7 @@ export class AppService implements OnModuleInit {
 
   public setDelay(delay: number): { message: string; newDelay: number } {
     this.currentDelayMs = delay;
-    return {
-      message: 'Delay updated successfully.',
-      newDelay: this.currentDelayMs,
-    };
+    return { message: 'Delay updated successfully.', newDelay: this.currentDelayMs };
   }
 
   public getDelay(): number {
@@ -44,12 +36,22 @@ export class AppService implements OnModuleInit {
       throw new InternalServerErrorException('Failed to fetch weather data.');
     }
 
+    // 7-day range
+    const startDate = new Date(date);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+
+    // format date
+    const toDateString = (d: Date) => d.toISOString().split('T')[0];
+    
     const forecasts = await this.forecastRepository.find({
       where: {
         destination: destination,
-        startDate: LessThanOrEqual(date),
-        endDate: MoreThanOrEqual(date),
+        date: Between(toDateString(startDate), toDateString(endDate)),
       },
+      order: {
+        date: 'ASC',
+      }
     });
     return { forecast: forecasts };
   }

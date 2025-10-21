@@ -4,16 +4,19 @@ import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 export class Forecast {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   destination: string;
+
   @Column()
-  startDate: string;
-  @Column()
-  endDate: string;
+  date: string;
+
   @Column()
   tempMin: number;
+
   @Column()
   tempMax: number;
+
   @Column()
   condition: string;
 }
